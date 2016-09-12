@@ -18,8 +18,8 @@ public class S3Scanner implements DataByLineReader {
     private byte[] bytes = new byte[0];
     private long bufferOffset;
     private long maximumRange;
-    private Queue<Byte> remainingList = new LinkedList<>();
     private Queue<String> queue = new LinkedList<>();
+    private Queue<Byte> byteList = new LinkedList<>();
 
     public S3Scanner(AmazonS3 amazonS3, String domain, String fileUrl, long bufferSize) {
         this.amazonS3 = amazonS3;
@@ -62,23 +62,12 @@ public class S3Scanner implements DataByLineReader {
     }
 
     private void commenceByteRowAddition() {
-        Queue<Byte> byteList = new LinkedList<>();
-
-        if (!remainingList.isEmpty()) {
-            byteList.addAll(remainingList);
-            remainingList.clear();
-        }
-
         for (int i = 0; i < bytes.length; i++) {
             if (bytes[i] == System.lineSeparator().getBytes()[0]) {
                 convertAndAddRow(byteList);
             } else {
                 byteList.add(bytes[i]);
             }
-        }
-
-        if (!byteList.isEmpty()) {
-            remainingList.addAll(byteList);
         }
 
         bytes = new byte[0];

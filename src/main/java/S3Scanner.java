@@ -6,7 +6,6 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -58,41 +57,40 @@ public class S3Scanner implements DataByLineReader {
             }
 
             if (new String(bytes).contains(System.lineSeparator())) {
-                commenceByteRowAddition(bytes);
+                commenceByteRowAddition();
             }
         }
     }
 
-    private void commenceByteRowAddition(byte[] byteArray) {
-        List<Byte> byteList = new ArrayList<>();
+    private void commenceByteRowAddition() {
+        Queue<Byte> byteList = new LinkedList<>();
 
         if (!remainingList.isEmpty()) {
             byteList.addAll(remainingList);
             remainingList.clear();
         }
 
-        for (int i = 0; i < byteArray.length; i++) {
-            if (byteArray[i] == System.lineSeparator().getBytes()[0]) {
+        for (int i = 0; i < bytes.length; i++) {
+            if (bytes[i] == System.lineSeparator().getBytes()[0]) {
                 convertAndAddRow(byteList);
             } else {
-                byteList.add(byteArray[i]);
+                byteList.add(bytes[i]);
             }
         }
 
         if (!byteList.isEmpty()) {
             remainingList.addAll(byteList);
-            byteList.clear();
         }
 
         bytes = new byte[0];
         searching = false;
     }
 
-    private void convertAndAddRow(List<Byte> byteList) {
+    private void convertAndAddRow(Queue<Byte> byteList) {
         byte[] byteArrayTwo = new byte[byteList.size()];
 
-        for (int j = 0; j < byteList.size(); j++) {
-            byteArrayTwo[j] = byteList.get(j);
+        for (int j = 0; j < byteArrayTwo.length; j++) {
+            byteArrayTwo[j] = byteList.poll();
         }
 
         queue.add(new String(byteArrayTwo));

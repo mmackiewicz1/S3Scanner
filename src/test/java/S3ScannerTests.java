@@ -11,7 +11,8 @@ import java.io.IOException;
 import java.util.Scanner;
 
 public class S3ScannerTests {
-    private static final long SMALL_BUFFER_SIZE = 1;
+    private static final long ONE_BYTE_BUFFER_SIZE = 1;
+    private static final long SMALL_BUFFER_SIZE = 64;
     private static final long MEDIUM_BUFFER_SIZE = 32768;
     private static final long LARGE_BUFFER_SIZE = 10485756;
     private static final String DOMAIN = "velocity-dev";
@@ -51,6 +52,15 @@ public class S3ScannerTests {
     @Test
     public void When_FileContentIsBeingLoadedWithSmallBuffer_Expect_ToContainTheSameData() throws IOException {
         S3Scanner s3Scanner = new S3Scanner(new AmazonS3Client(new ProfileCredentialsProvider()), DOMAIN, FILE_URL, SMALL_BUFFER_SIZE);
+        String line;
+        while ((line = s3Scanner.getLine()) != null) {
+            assertThat(line, is(scanner.nextLine()));
+        }
+    }
+
+    @Test
+    public void When_FileContentIsBeingLoadedWithONE_ByteBuffer_Expect_ToContainTheSameData() throws IOException {
+        S3Scanner s3Scanner = new S3Scanner(new AmazonS3Client(new ProfileCredentialsProvider()), DOMAIN, FILE_URL, ONE_BYTE_BUFFER_SIZE);
         String line;
         while ((line = s3Scanner.getLine()) != null) {
             assertThat(line, is(scanner.nextLine()));

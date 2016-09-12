@@ -2,6 +2,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.util.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -17,9 +18,9 @@ public class S3Scanner implements DataByLineReader {
     private boolean lastRow = false;
     private long bufferOffset;
     private long maximumRange;
-    private String receivedTextData = "";
-    private String remainingTextData = "";
+    private byte[] remainingTextData = new byte[0];
     private Queue<String> queue = new LinkedList<>();
+    private byte[] bytes = new byte[0];
 
     public S3Scanner(AmazonS3 amazonS3, String domain, String fileUrl, long bufferSize) {
         this.amazonS3 = amazonS3;
@@ -29,7 +30,7 @@ public class S3Scanner implements DataByLineReader {
     }
 
     public String getLine() throws IOException {
-        if (queue.isEmpty() && maximumRange >= bufferOffset) {
+        if (queue.isEmpty() && maximumRange > bufferOffset) {
             searching = true;
             getData();
         }
@@ -45,51 +46,55 @@ public class S3Scanner implements DataByLineReader {
         while (searching) {
             if (maximumRange > bufferOffset + bufferSize) {
                 request.setRange(bufferOffset, bufferOffset + bufferSize - 1);
-            } else {
+            } else if (maximumRange < bufferOffset + bufferSize) {
                 lastRow = true;
                 request.setRange(bufferOffset, maximumRange);
+            } else {
+                searching = false;
             }
 
             bufferOffset = bufferOffset + bufferSize;
 
             try (InputStream inputStream = amazonS3.getObject(request).getObjectContent()) {
-                remainingTextData = receivedTextData = IOUtils.toString(inputStream);
+                bytes = ArrayUtils.addAll(bytes, IOUtils.toByteArray(inputStream));
             }
 
-            if (receivedTextData.contains(System.lineSeparator())) {
-                commenceRowAddition(receivedTextData.split(System.lineSeparator()));
+            String byteString = new String(bytes);
+
+            if (byteString.contains(System.lineSeparator())) {
+                commenceRowAddition(byteString.split(System.lineSeparator()));
             }
         }
     }
 
     private void commenceRowAddition(String[] rows) {
         if (rows.length == 1) {
-            queue.add(remainingTextData + rows[0]);
+            queue.add(new String(remainingTextData) + rows[0]);
         } else {
             addDataFromRows(rows);
 
             if (lastRow) {
-                queue.add(remainingTextData);
+                queue.add(new String(remainingTextData));
             }
         }
 
-        if (receivedTextData.endsWith(System.lineSeparator())) {
-            remainingTextData = "";
+        if (new String(bytes).endsWith(System.lineSeparator())) {
+            remainingTextData = new byte[0];
         }
 
-        receivedTextData = "";
+        bytes = new byte[0];
         searching = false;
     }
 
     private void addDataFromRows(String[] rows) {
         for (int j = 0; j < rows.length - 1; j++) {
             if (j == 0) {
-                queue.add(remainingTextData + rows[j]);
+                queue.add(new String(remainingTextData) + rows[j]);
             } else {
                 queue.add(rows[j]);
             }
         }
 
-        remainingTextData = rows[rows.length - 1];
+        remainingTextData = rows[rows.length - 1].getBytes();
     }
 }

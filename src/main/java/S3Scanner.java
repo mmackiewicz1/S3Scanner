@@ -7,7 +7,6 @@ import org.apache.commons.lang3.ArrayUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 
 public class S3Scanner implements DataByLineReader {
@@ -19,7 +18,7 @@ public class S3Scanner implements DataByLineReader {
     private byte[] bytes = new byte[0];
     private long bufferOffset;
     private long maximumRange;
-    private List<Byte> remainingList = new LinkedList<>();
+    private Queue<Byte> remainingList = new LinkedList<>();
     private Queue<String> queue = new LinkedList<>();
 
     public S3Scanner(AmazonS3 amazonS3, String domain, String fileUrl, long bufferSize) {

@@ -2,10 +2,13 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectMetadataRequest;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.util.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 public class S3Scanner implements DataByLineReader {
@@ -14,11 +17,10 @@ public class S3Scanner implements DataByLineReader {
     private final long bufferSize;
 
     private boolean searching = true;
-    private boolean lastRow = false;
+    private byte[] bytes = new byte[0];
     private long bufferOffset;
     private long maximumRange;
-    private String receivedTextData = "";
-    private String remainingTextData = "";
+    private List<Byte> remainingList = new LinkedList<>();
     private Queue<String> queue = new LinkedList<>();
 
     public S3Scanner(AmazonS3 amazonS3, String domain, String fileUrl, long bufferSize) {
@@ -29,7 +31,7 @@ public class S3Scanner implements DataByLineReader {
     }
 
     public String getLine() throws IOException {
-        if (queue.isEmpty() && maximumRange >= bufferOffset) {
+        if (queue.isEmpty() && maximumRange > bufferOffset) {
             searching = true;
             getData();
         }
@@ -45,51 +47,56 @@ public class S3Scanner implements DataByLineReader {
         while (searching) {
             if (maximumRange > bufferOffset + bufferSize) {
                 request.setRange(bufferOffset, bufferOffset + bufferSize - 1);
-            } else {
-                lastRow = true;
+            } else if (maximumRange <= bufferOffset + bufferSize) {
                 request.setRange(bufferOffset, maximumRange);
             }
 
             bufferOffset = bufferOffset + bufferSize;
 
             try (InputStream inputStream = amazonS3.getObject(request).getObjectContent()) {
-                remainingTextData = receivedTextData = IOUtils.toString(inputStream);
+                bytes = ArrayUtils.addAll(bytes, IOUtils.toByteArray(inputStream));
             }
 
-            if (receivedTextData.contains(System.lineSeparator())) {
-                commenceRowAddition(receivedTextData.split(System.lineSeparator()));
+            if (new String(bytes).contains(System.lineSeparator())) {
+                commenceByteRowAddition(bytes);
             }
         }
     }
 
-    private void commenceRowAddition(String[] rows) {
-        if (rows.length == 1) {
-            queue.add(remainingTextData + rows[0]);
-        } else {
-            addDataFromRows(rows);
+    private void commenceByteRowAddition(byte[] byteArray) {
+        List<Byte> byteList = new ArrayList<>();
 
-            if (lastRow) {
-                queue.add(remainingTextData);
+        if (!remainingList.isEmpty()) {
+            byteList.addAll(remainingList);
+            remainingList.clear();
+        }
+
+        for (int i = 0; i < byteArray.length; i++) {
+            if (byteArray[i] == System.lineSeparator().getBytes()[0]) {
+                convertAndAddRow(byteList);
+            } else {
+                byteList.add(byteArray[i]);
             }
         }
 
-        if (receivedTextData.endsWith(System.lineSeparator())) {
-            remainingTextData = "";
+        if (!byteList.isEmpty()) {
+            remainingList.addAll(byteList);
+            byteList.clear();
         }
 
-        receivedTextData = "";
+        bytes = new byte[0];
         searching = false;
     }
 
-    private void addDataFromRows(String[] rows) {
-        for (int j = 0; j < rows.length - 1; j++) {
-            if (j == 0) {
-                queue.add(remainingTextData + rows[j]);
-            } else {
-                queue.add(rows[j]);
-            }
+    private void convertAndAddRow(List<Byte> byteList) {
+        byte[] byteArrayTwo = new byte[byteList.size()];
+
+        for (int j = 0; j < byteList.size(); j++) {
+            byteArrayTwo[j] = byteList.get(j);
         }
 
-        remainingTextData = rows[rows.length - 1];
+        queue.add(new String(byteArrayTwo));
+
+        byteList.clear();
     }
 }

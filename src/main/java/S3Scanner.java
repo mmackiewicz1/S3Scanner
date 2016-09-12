@@ -73,15 +73,7 @@ public class S3Scanner implements DataByLineReader {
 
         for (int i = 0; i < byteArray.length; i++) {
             if (byteArray[i] == System.lineSeparator().getBytes()[0]) {
-                byte[] byteArrayTwo = new byte[byteList.size()];
-
-                for (int j = 0; j < byteList.size(); j++) {
-                    byteArrayTwo[j] = byteList.get(j);
-                }
-
-                queue.add(new String(byteArrayTwo));
-
-                byteList.clear();
+               convertAndAddRow(byteList);
             } else {
                 byteList.add(byteArray[i]);
             }
@@ -96,37 +88,15 @@ public class S3Scanner implements DataByLineReader {
         searching = false;
     }
 
-    /*
+    private void convertAndAddRow(List<Byte> byteList) {
+        byte[] byteArrayTwo = new byte[byteList.size()];
 
-    private void commenceRowAddition(String[] rows) {
-        if (rows.length == 1) {
-            queue.add(new String(remainingTextData) + rows[0]);
-        } else {
-            addDataFromRows(rows);
-
-            if (lastRow) {
-                queue.add(new String(remainingTextData));
-            }
+        for (int j = 0; j < byteList.size(); j++) {
+            byteArrayTwo[j] = byteList.get(j);
         }
 
-        if (new String(bytes).endsWith(System.lineSeparator())) {
-            remainingTextData = new byte[0];
-        }
+        queue.add(new String(byteArrayTwo));
 
-        bytes = new byte[0];
-        searching = false;
+        byteList.clear();
     }
-
-    private void addDataFromRows(String[] rows) {
-        for (int j = 0; j < rows.length - 1; j++) {
-            if (j == 0) {
-                queue.add(new String(remainingTextData) + rows[j]);
-            } else {
-                queue.add(rows[j]);
-            }
-        }
-
-        remainingTextData = rows[rows.length - 1].getBytes();
-    }
-    */
 }

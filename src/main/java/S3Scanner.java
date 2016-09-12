@@ -73,7 +73,7 @@ public class S3Scanner implements DataByLineReader {
 
         for (int i = 0; i < byteArray.length; i++) {
             if (byteArray[i] == System.lineSeparator().getBytes()[0]) {
-               convertAndAddRow(byteList);
+                convertAndAddRow(byteList);
             } else {
                 byteList.add(byteArray[i]);
             }

@@ -38,7 +38,7 @@ public class SecondaryS3ScannerTests {
             assertThat(line, is(scanner.nextLine()));
         }
 
-        System.out.println("Time passed for medium buffer: " + (System.nanoTime() - startTime)/Math.pow(10, 9) + "seconds");
+        System.out.println("Time passed for medium buffer: " + (System.nanoTime() - startTime)/Math.pow(10, 9) + " seconds");
     }
 
     @Test
@@ -50,7 +50,7 @@ public class SecondaryS3ScannerTests {
             assertThat(line, is(scanner.nextLine()));
         }
 
-        System.out.println("Time passed for large buffer: " + (System.nanoTime() - startTime)/Math.pow(10, 9) + "seconds");
+        System.out.println("Time passed for large buffer: " + (System.nanoTime() - startTime)/Math.pow(10, 9) + " seconds");
     }
 
     @Test
@@ -74,6 +74,6 @@ public class SecondaryS3ScannerTests {
             assertThat(line, is(scanner.nextLine()));
         }
 
-        System.out.println("Time passed for one byte buffer: " + (System.nanoTime() - startTime)/Math.pow(10, 9) + "seconds");
+        System.out.println("Time passed for one byte buffer: " + (System.nanoTime() - startTime)/Math.pow(10, 9) + " seconds");
     }
 }

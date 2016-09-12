@@ -15,9 +15,9 @@ public class S3Scanner implements DataByLineReader {
     private final long bufferSize;
 
     private boolean searching = true;
-    private byte[] bytes = new byte[0];
     private long bufferOffset;
     private long maximumRange;
+    private byte[] bytes = new byte[0];
     private Queue<String> queue = new LinkedList<>();
     private Queue<Byte> byteList = new LinkedList<>();
 
@@ -75,12 +75,12 @@ public class S3Scanner implements DataByLineReader {
     }
 
     private void convertAndAddRow(Queue<Byte> byteList) {
-        byte[] byteArrayTwo = new byte[byteList.size()];
+        byte[] byteValues = new byte[byteList.size()];
 
-        for (int j = 0; j < byteArrayTwo.length; j++) {
-            byteArrayTwo[j] = byteList.poll();
+        for (int i = 0; i < byteValues.length; i++) {
+            byteValues[i] = byteList.poll();
         }
 
-        queue.add(new String(byteArrayTwo));
+        queue.add(new String(byteValues));
     }
 }

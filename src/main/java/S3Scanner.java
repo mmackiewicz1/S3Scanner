@@ -93,7 +93,5 @@ public class S3Scanner implements DataByLineReader {
         }
 
         queue.add(new String(byteArrayTwo));
-
-        byteList.clear();
     }
 }

@@ -4,10 +4,12 @@ import static org.hamcrest.Matchers.is;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 import java.util.Scanner;
 
+@Category(S3IntegrationTest.class)
 public class SecondaryS3ScannerTests {
     private static final long ONE_BYTE_BUFFER_SIZE = 1;
     private static final long SMALL_BUFFER_SIZE = 64;

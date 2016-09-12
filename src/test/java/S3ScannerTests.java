@@ -11,6 +11,7 @@ import org.junit.experimental.categories.Category;
 import java.io.IOException;
 import java.util.Scanner;
 
+@Category(S3IntegrationTest.class)
 public class S3ScannerTests {
     private static final long ONE_BYTE_BUFFER_SIZE = 1;
     private static final long SMALL_BUFFER_SIZE = 64;

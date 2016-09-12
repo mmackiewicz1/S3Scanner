@@ -6,7 +6,9 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 public class S3Scanner implements DataByLineReader {
@@ -15,12 +17,11 @@ public class S3Scanner implements DataByLineReader {
     private final long bufferSize;
 
     private boolean searching = true;
-    private boolean lastRow = false;
+    private byte[] bytes = new byte[0];
     private long bufferOffset;
     private long maximumRange;
-    private byte[] remainingTextData = new byte[0];
+    private List<Byte> remainingList = new LinkedList<>();
     private Queue<String> queue = new LinkedList<>();
-    private byte[] bytes = new byte[0];
 
     public S3Scanner(AmazonS3 amazonS3, String domain, String fileUrl, long bufferSize) {
         this.amazonS3 = amazonS3;
@@ -46,11 +47,8 @@ public class S3Scanner implements DataByLineReader {
         while (searching) {
             if (maximumRange > bufferOffset + bufferSize) {
                 request.setRange(bufferOffset, bufferOffset + bufferSize - 1);
-            } else if (maximumRange < bufferOffset + bufferSize) {
-                lastRow = true;
+            } else if (maximumRange <= bufferOffset + bufferSize) {
                 request.setRange(bufferOffset, maximumRange);
-            } else {
-                searching = false;
             }
 
             bufferOffset = bufferOffset + bufferSize;
@@ -59,13 +57,46 @@ public class S3Scanner implements DataByLineReader {
                 bytes = ArrayUtils.addAll(bytes, IOUtils.toByteArray(inputStream));
             }
 
-            String byteString = new String(bytes);
-
-            if (byteString.contains(System.lineSeparator())) {
-                commenceRowAddition(byteString.split(System.lineSeparator()));
+            if (new String(bytes).contains(System.lineSeparator())) {
+                commenceByteRowAddition(bytes);
             }
         }
     }
+
+    private void commenceByteRowAddition(byte[] byteArray) {
+        List<Byte> byteList = new ArrayList<>();
+
+        if (!remainingList.isEmpty()) {
+            byteList.addAll(remainingList);
+            remainingList.clear();
+        }
+
+        for (int i = 0; i < byteArray.length; i++) {
+            if (byteArray[i] == System.lineSeparator().getBytes()[0]) {
+                byte[] byteArrayTwo = new byte[byteList.size()];
+
+                for (int j = 0; j < byteList.size(); j++) {
+                    byteArrayTwo[j] = byteList.get(j);
+                }
+
+                queue.add(new String(byteArrayTwo));
+
+                byteList.clear();
+            } else {
+                byteList.add(byteArray[i]);
+            }
+        }
+
+        if (!byteList.isEmpty()) {
+            remainingList.addAll(byteList);
+            byteList.clear();
+        }
+
+        bytes = new byte[0];
+        searching = false;
+    }
+
+    /*
 
     private void commenceRowAddition(String[] rows) {
         if (rows.length == 1) {
@@ -97,4 +128,5 @@ public class S3Scanner implements DataByLineReader {
 
         remainingTextData = rows[rows.length - 1].getBytes();
     }
+    */
 }

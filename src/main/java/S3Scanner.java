@@ -62,11 +62,11 @@ public class S3Scanner implements DataByLineReader {
     }
 
     private void commenceByteRowAddition() {
-        for (int i = 0; i < bytes.length; i++) {
-            if (bytes[i] == System.lineSeparator().getBytes()[0]) {
+        for (byte characterByte : bytes) {
+            if (hasLineSeparator(characterByte)) {
                 convertAndAddRow(byteList);
             } else {
-                byteList.add(bytes[i]);
+                byteList.add(characterByte);
             }
         }
 
@@ -82,5 +82,15 @@ public class S3Scanner implements DataByLineReader {
         }
 
         queue.add(new String(byteValues));
+    }
+
+    private boolean hasLineSeparator(byte characterByte) {
+        for (byte separatorByte : System.lineSeparator().getBytes()) {
+            if (characterByte == separatorByte) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

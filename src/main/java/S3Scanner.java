@@ -13,10 +13,10 @@ public class S3Scanner implements DataByLineReader {
     private final AmazonS3 amazonS3;
     private final GetObjectRequest request;
     private final long bufferSize;
+    private final long maximumRange;
 
     private boolean searching = true;
     private long bufferOffset;
-    private long maximumRange;
     private byte[] bytes = new byte[0];
     private Queue<String> queue = new LinkedList<>();
     private Queue<Byte> byteList = new LinkedList<>();

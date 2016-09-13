@@ -45,7 +45,7 @@ public class S3Scanner implements DataByLineReader {
         while (searching) {
             if (maximumRange > bufferOffset + bufferSize) {
                 request.setRange(bufferOffset, bufferOffset + bufferSize - 1);
-            } else if (maximumRange <= bufferOffset + bufferSize) {
+            } else {
                 request.setRange(bufferOffset, maximumRange);
             }
 
